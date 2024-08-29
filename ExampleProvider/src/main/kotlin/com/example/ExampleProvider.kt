@@ -1,5 +1,6 @@
 package com.example
 
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.lagradost.cloudstream3.TvType
 import com.lagradost.cloudstream3.MainAPI
@@ -17,6 +18,7 @@ class ExampleProvider(val plugin: TestPlugin) : MainAPI() { // all providers mus
 
     // this function gets called when you search for something
     override suspend fun search(query: String): List<SearchResponse> {
+        Log.d("Function Search","Dang search")
         return listOf<SearchResponse>()
     }
 }
