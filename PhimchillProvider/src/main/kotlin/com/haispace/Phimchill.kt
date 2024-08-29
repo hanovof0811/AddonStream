@@ -1,5 +1,8 @@
 package com.haispace
 
+import android.content.Context
+import android.widget.Toast
+import com.lagradost.api.getContext
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
@@ -7,7 +10,8 @@ import com.lagradost.cloudstream3.utils.*
 import org.jsoup.nodes.Element
 import java.net.URI
 import java.net.URLDecoder
-class Phimchill : MainAPI() {
+
+class Phimchill() : MainAPI() {
     override var mainUrl              = "https://phimmoichillk.net"
     override var name                 = "PhimChill"
     override val hasMainPage          = true
@@ -175,6 +179,8 @@ class Phimchill : MainAPI() {
                 ).text.substringAfterLast("iniPlayers(\"")
                     .substringBefore("\"")
             }
+        val key2 = key
+        Toast.makeText(null,"key la"+ key,Toast.LENGTH_SHORT).show()
 
         listOf(
             Pair("https://sotrim.topphimmoi.org/raw/$key/index.m3u8", "PMFAST"),
