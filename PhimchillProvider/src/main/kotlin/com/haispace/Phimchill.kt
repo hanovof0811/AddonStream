@@ -11,7 +11,7 @@ import java.net.URI
 import java.net.URLDecoder
 
 class Phimchill() : MainAPI() {
-    override var mainUrl              = "https://phimmoichillk.net"
+    override var mainUrl              = "https://phimmoichillv.net"
     override var name                 = "PhimChill"
     override val hasMainPage          = true
     override var lang                 = "vi"
@@ -166,18 +166,16 @@ class Phimchill() : MainAPI() {
         val key = document.select("script[type=\"text/javascript\"]")
             .find { it.data().contains("filmInfo.filmID =") }?.data()?.let { script ->
                 val id = script.substringAfter("parseInt('").substringBefore("'")
-                app.post(
+                 app.post(
                     url = "$directUrl/chillsplayer.php",
                     data = mapOf("qcao" to id),
-                    referer = data,
+//                    referer = data,
                     headers = mapOf(
                         "X-Requested-With" to "XMLHttpRequest",
-                        "Content-Type" to "application/x-www-form-urlencoded; charset=UTF-8"
+                        "Content-Type" to "application/x-www-form-urlencoded; charset=UTF-8",
                     )
-                ).text.substringAfterLast("iniPlayers(\"")
-                    .substringBefore("\"")
+                ).text.substringAfterLast("iniPlayers(\"").substringBefore("\"")
             }
-        println(key)
         listOf(
             Pair("https://sotrim.topphimmoi.org/raw/$key/index.m3u8", "PMFAST"),
             Pair("https://dash.megacdn.xyz/raw/$key/index.m3u8", "PMHLS"),
