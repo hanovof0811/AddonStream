@@ -1,11 +1,31 @@
 package com.haispace
 
 
-import android.widget.Toast
-import com.lagradost.cloudstream3.*
+import com.lagradost.cloudstream3.Episode
+import com.lagradost.cloudstream3.HomePageList
+import com.lagradost.cloudstream3.HomePageResponse
+import com.lagradost.cloudstream3.LoadResponse
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
-import com.lagradost.cloudstream3.utils.*
+import com.lagradost.cloudstream3.MainAPI
+import com.lagradost.cloudstream3.MainPageRequest
+import com.lagradost.cloudstream3.SearchResponse
+import com.lagradost.cloudstream3.SubtitleFile
+import com.lagradost.cloudstream3.TvType
+import com.lagradost.cloudstream3.addQuality
+import com.lagradost.cloudstream3.addSub
+import com.lagradost.cloudstream3.app
+import com.lagradost.cloudstream3.fixUrl
+import com.lagradost.cloudstream3.mainPageOf
+import com.lagradost.cloudstream3.newAnimeSearchResponse
+import com.lagradost.cloudstream3.newHomePageResponse
+import com.lagradost.cloudstream3.newMovieLoadResponse
+import com.lagradost.cloudstream3.newMovieSearchResponse
+import com.lagradost.cloudstream3.newTvSeriesLoadResponse
+import com.lagradost.cloudstream3.toRatingInt
+import com.lagradost.cloudstream3.utils.ExtractorLink
+import com.lagradost.cloudstream3.utils.INFER_TYPE
+import com.lagradost.cloudstream3.utils.Qualities
 import org.jsoup.nodes.Element
 import java.net.URI
 import java.net.URLDecoder
@@ -32,12 +52,14 @@ class Phimchill() : MainAPI() {
         "$mainUrl/country/phim-thai-lan/page-" to "Phim Thái Lan",
         "$mainUrl/genre/phim-sap-chieu/page-" to "Phim Sắp Chiếu",
     )
-
+    private var cookies = LinkedHashMap<String, String>()
     override suspend fun getMainPage(
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
-        val document = app.get(request.data + page).document
+        val resp = app.get(request.data + page)
+        cookies = resp.cookies as LinkedHashMap<String, String>
+        val document = resp.document
         val home = document.select("li.item").mapNotNull {
             it.toSearchResult()
         }
@@ -81,8 +103,9 @@ class Phimchill() : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
-        val link = "$mainUrl/tim-kiem/$query"
-        val document = app.get(link).document
+        val link = "$mainUrl/tim-kiem/$query/"
+        val res = app.get(link)
+        val document = res.document
 
         return document.select("ul.list-film li").map {
             it.toSearchResult()
@@ -162,8 +185,11 @@ class Phimchill() : MainAPI() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-        val document = app.get(data).document
-        val key = document.select("script[type=\"text/javascript\"]")
+        val res = app.get(data)
+        val document = res.document
+
+
+        val key = document.select("script")
             .find { it.data().contains("filmInfo.filmID =") }?.data()?.let { script ->
                 val id = script.substringAfter("parseInt('").substringBefore("'")
                  app.post(
@@ -177,11 +203,10 @@ class Phimchill() : MainAPI() {
                 ).text.substringAfterLast("iniPlayers(\"").substringBefore("\"")
             }
         listOf(
-            Pair("https://sotrim.topphimmoi.org/raw/$key/index.m3u8", "PMFAST"),
-            Pair("https://dash.megacdn.xyz/raw/$key/index.m3u8", "PMHLS"),
-            Pair("https://so-trym.phimchill.net/dash/$key/index.m3u8", "PMPRO"),
-            Pair("https://dash.megacdn.xyz/dast/$key/index.m3u8", "PMBK")
-        ).map { (link, source) ->
+            Pair("https://dash.motchills.net/raw/$key/index.m3u8", "PMFAST"),
+            Pair("https://sotrim.topphimmoi.org/raw/$key/index.m3u8", "PMHLS"),
+            ).map { (link, source) ->
+            println(link)
             callback.invoke(
                 ExtractorLink(
                     source,
@@ -194,6 +219,11 @@ class Phimchill() : MainAPI() {
             )
         }
         return true
+    }
+
+    private suspend fun getCookieToGetFilm(id: String) {
+        app.post("$directUrl/ajax/movie_update_view", data = mapOf("id" to id))
+        println(app.baseClient.cookieJar.toString())
     }
 
     private fun getBaseUrl(url: String): String {
