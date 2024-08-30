@@ -1,8 +1,7 @@
 package com.haispace
 
-import android.content.Context
+
 import android.widget.Toast
-import com.lagradost.api.getContext
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.LoadResponse.Companion.addActors
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
@@ -164,9 +163,8 @@ class Phimchill() : MainAPI() {
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         val document = app.get(data).document
-
-        val key = document.select("div#content script")
-            .find { it.data().contains("filmInfo.episodeID =") }?.data()?.let { script ->
+        val key = document.select("script[type=\"text/javascript\"]")
+            .find { it.data().contains("filmInfo.filmID =") }?.data()?.let { script ->
                 val id = script.substringAfter("parseInt('").substringBefore("'")
                 app.post(
                     url = "$directUrl/chillsplayer.php",
@@ -179,9 +177,7 @@ class Phimchill() : MainAPI() {
                 ).text.substringAfterLast("iniPlayers(\"")
                     .substringBefore("\"")
             }
-        val key2 = key
-        Toast.makeText(null,"key la"+ key,Toast.LENGTH_SHORT).show()
-
+        println(key)
         listOf(
             Pair("https://sotrim.topphimmoi.org/raw/$key/index.m3u8", "PMFAST"),
             Pair("https://dash.megacdn.xyz/raw/$key/index.m3u8", "PMHLS"),
