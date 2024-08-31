@@ -10,8 +10,8 @@ version = -1
 cloudstream {
     // All of these properties are optional, you can safely remove them
 
-    description = "Lorem ipsum"
-    authors = listOf("Cloudburst")
+    description = "Nguồn từ phimmoichill"
+    authors = listOf("HaiGH-Space")
 
     /**
     * Status int as the following:
@@ -28,7 +28,7 @@ cloudstream {
     language = "vi"
 
     // random cc logo i found
-    iconUrl = "https://upload.wikimedia.org/wikipedia/commons/2/2f/Korduene_Logo.png"
+    iconUrl = "https://phimmoichillv.net/favicon.ico"
 }
 
 android {
