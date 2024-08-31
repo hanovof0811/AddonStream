@@ -6,7 +6,7 @@
 /build
 **/build
 /captures
-.github/workflows
+/.github/workflows
 .externalNativeBuild
 .cxx
 local.properties
