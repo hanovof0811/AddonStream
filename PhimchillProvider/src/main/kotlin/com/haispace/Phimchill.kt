@@ -229,6 +229,7 @@ class Phimchill() : MainAPI() {
     private fun getBaseUrl(url: String): String {
         return URI(url).let {
             "${it.scheme}://${it.host}"
+
         }
     }
 }
