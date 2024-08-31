@@ -221,10 +221,6 @@ class Phimchill() : MainAPI() {
         return true
     }
 
-    private suspend fun getCookieToGetFilm(id: String) {
-        app.post("$directUrl/ajax/movie_update_view", data = mapOf("id" to id))
-        println(app.baseClient.cookieJar.toString())
-    }
 
     private fun getBaseUrl(url: String): String {
         return URI(url).let {
