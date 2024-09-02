@@ -52,13 +52,13 @@ class Phimchill() : MainAPI() {
         "$mainUrl/country/phim-thai-lan/page-" to "Phim Thái Lan",
         "$mainUrl/genre/phim-sap-chieu/page-" to "Phim Sắp Chiếu",
     )
-    private var cookies = LinkedHashMap<String, String>()
+
     override suspend fun getMainPage(
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
         val resp = app.get(request.data + page)
-        cookies = resp.cookies as LinkedHashMap<String, String>
+
         val document = resp.document
         val home = document.select("li.item").mapNotNull {
             it.toSearchResult()
