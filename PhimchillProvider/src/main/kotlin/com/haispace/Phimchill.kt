@@ -103,7 +103,8 @@ class Phimchill() : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
-        val link = "$mainUrl/tim-kiem/$query/"
+        val newQuery = decode(query)
+        val link = "$mainUrl/tim-kiem/$newQuery/"
         val res = app.get(link)
         val document = res.document
 

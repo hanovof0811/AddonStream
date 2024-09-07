@@ -17,6 +17,7 @@ class MotchillProvider : MainAPI() {
     override val hasMainPage = true
     override var lang = "vi"
     override val hasDownloadSupport = true
+    override val hasQuickSearch = true
     val serverFixUrl = "https://proxycros.onrender.com/index.m3u8?url="
     override val supportedTypes = setOf(
         TvType.Movie,

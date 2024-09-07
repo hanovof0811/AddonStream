@@ -124,7 +124,7 @@ class OPhim : MainAPI() {
         val rating =
             movieDetail.selectFirst("div.ratings_wrapper")?.selectFirst("span.score")?.text()
                 .toRatingInt()
-        val actors = movieDetail.select("p.actors")[1].select("a").map { it.text() }
+        val actors = movieDetail.select("p.actors")?.get(1)?.select("a")?.map { it.text() }
 
 
         return if (tvType == TvType.TvSeries) {
