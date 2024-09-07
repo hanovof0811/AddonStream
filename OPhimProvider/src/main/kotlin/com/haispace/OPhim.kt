@@ -81,7 +81,7 @@ class OPhim : MainAPI() {
         val poster = this.selectFirst("img").attr("data-src")
         val title = this.attr("title")
         val epsiodeStr = this.selectFirst("span.episode").text()
-        var epsiode = Regex("\\d").find(epsiodeStr)?.value?.toIntOrNull()
+        var epsiode = Regex("\\d+").find(epsiodeStr)?.value?.toIntOrNull()
         return if (epsiode != null) {
             newAnimeSearchResponse(title, href, TvType.TvSeries) {
                 this.posterUrl = poster

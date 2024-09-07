@@ -77,8 +77,6 @@ subprojects {
 //            }
 //        }
 //
-//        val implementation by configurations
-//        val apk by configurations
 //
 //        // If the task is specifically to compile the app then use the stubs, otherwise us the library.
 //        if (useApk) {
@@ -89,7 +87,7 @@ subprojects {
 //            implementation("com.github.Blatzar:CloudstreamApi:0.1.6")
 //        }
 
-        // Rest of your code here...
+//         Rest of your code here...
 
 
         // these dependencies can include any of those which are added by the app,
