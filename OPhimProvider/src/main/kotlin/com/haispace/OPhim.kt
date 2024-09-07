@@ -116,15 +116,15 @@ class OPhim : MainAPI() {
         val tags = movieDetail.selectFirst("p.category")?.select("a")?.map { it.text() }
         val link = wrapContent.selectFirst("div.movie-poster")?.selectFirst("div.halim-watch-box")
             ?.selectFirst("a")?.attr("href")
-        val tvType =
-            if (movieDetail.select("p.lastEp").isNotEmpty()) TvType.TvSeries else TvType.Movie
+        val tvType = TvType.TvSeries
         val description =
             wrapContent.selectFirst("div.halim-entry-box")?.selectFirst("article.item-content")
                 ?.selectFirst("p")?.text()
         val rating =
             movieDetail.selectFirst("div.ratings_wrapper")?.selectFirst("span.score")?.text()
                 .toRatingInt()
-        val actors = movieDetail.select("p.actors")?.get(1)?.select("a")?.map { it.text() }
+        val actorData = movieDetail.select("p.actors")
+        val actors = if (actorData.size>1) actorData[1].select("a").map{ it.text() } else null
 
 
         return if (tvType == TvType.TvSeries) {
@@ -134,13 +134,20 @@ class OPhim : MainAPI() {
                     val episode =
                         it.selectFirst("a")?.text()?.replace(Regex("[^0-9]"), "")?.trim()
                             ?.toIntOrNull()
-                    val name = "Tập $episode"
+                    var name : String
+                    if (episode==null){
+                        name = "Tập Full"
+                    }else{
+                         name = "Tập $episode"
+                    }
+
                     Episode(
                         data = href,
                         name = name,
                         episode = episode,
                     )
                 }
+            println(episodes)
             newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
                 this.posterUrl = poster
                 this.year = year
