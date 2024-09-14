@@ -206,7 +206,7 @@ class Phimchill() : MainAPI() {
         listOf(
             Pair("https://dash.motchills.net/raw/$key/index.m3u8", "PMFAST"),
             Pair("https://sotrim.topphimmoi.org/raw/$key/index.m3u8", "PMHLS"),
-            ).map { (link, source) ->
+            ).reversed().map { (link, source) ->
             println(link)
             callback.invoke(
                 ExtractorLink(
