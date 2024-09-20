@@ -1,5 +1,6 @@
 package com.haispace
 
+import com.google.gson.Gson
 import com.lagradost.cloudstream3.Episode
 import com.lagradost.cloudstream3.HomePageList
 import com.lagradost.cloudstream3.HomePageResponse
@@ -10,9 +11,11 @@ import com.lagradost.cloudstream3.MainAPI
 import com.lagradost.cloudstream3.MainPageRequest
 import com.lagradost.cloudstream3.SearchQuality
 import com.lagradost.cloudstream3.SearchResponse
+import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.TvType
 import com.lagradost.cloudstream3.addSub
 import com.lagradost.cloudstream3.app
+import com.lagradost.cloudstream3.isEpisodeBased
 import com.lagradost.cloudstream3.mainPageOf
 import com.lagradost.cloudstream3.newAnimeLoadResponse
 import com.lagradost.cloudstream3.newAnimeSearchResponse
@@ -21,25 +24,32 @@ import com.lagradost.cloudstream3.newMovieLoadResponse
 import com.lagradost.cloudstream3.newMovieSearchResponse
 import com.lagradost.cloudstream3.newTvSeriesLoadResponse
 import com.lagradost.cloudstream3.toRatingInt
+import com.lagradost.cloudstream3.utils.ExtractorLink
+import com.lagradost.cloudstream3.utils.Qualities
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import org.jsoup.nodes.Element
+import java.net.URLDecoder
 
 class AnimeVietsub : MainAPI() {
-    override var mainUrl = "https://thuviencine.com/"
-    override var name = "ThuVienCine"
+    override var mainUrl = "https://animevietsub.pub"
+    override var name = "AnimeVietsub"
     override val hasMainPage = true
     override var lang = "vi"
     override val hasDownloadSupport = true
+    override val hasQuickSearch = true
+
     override val supportedTypes = setOf(
         TvType.Movie,
         TvType.TvSeries,
         TvType.Anime
     )
     override val mainPage = mainPageOf(
-        "$mainUrl/movies/page/" to "Phim Lẻ",
-        "$mainUrl/tv-series/page/" to "Phim Bộ",
-        "$mainUrl/top/page/" to "Xu Hướng",
-        "$mainUrl/country/vietnam/page/" to "Phim Việt Nam",
-        "$mainUrl/danh-sach/list-dang-chieu////trang-" to "DS Anime Đang Chếu",
+        "$mainUrl/anime-le/page/" to "Anime Lẻ",
+        "$mainUrl/anime-bo/page/" to "Anime Bộ",
+        "$mainUrl/the-loai/hai-huoc/page/" to "Hài Hước",
+        "$mainUrl/hoat-hinh-trung-quoc/trang-" to "HH TQ",
+        "$mainUrl/danh-sach/list-dang-chieu/////trang-" to "DS Anime Đang Chếu",
         "$mainUrl/danh-sach/list-tron-bo/////trang-" to "DS Anime Trọn Bộ",
         )
     override suspend fun getMainPage(
@@ -55,10 +65,22 @@ class AnimeVietsub : MainAPI() {
             list = HomePageList(
                 name = request.name,
                 list = home,
-                isHorizontalImages = true
+                isHorizontalImages = false
             ),
             hasNext = true
         )
+    }
+    private fun decode(input: String): String = URLDecoder.decode(input, "utf-8")
+    override suspend fun search(query: String): List<SearchResponse>? {
+        val resp = app.get(decode("$mainUrl/tim-kiem/$query/"))
+        val document = resp.document
+        return document.select("li.TPostMv").mapNotNull {
+            it.toSearchResult()
+        }
+    }
+
+    override suspend fun quickSearch(query: String): List<SearchResponse>? {
+        return search(query)
     }
 
     override suspend fun load(url: String): LoadResponse {
@@ -76,7 +98,9 @@ class AnimeVietsub : MainAPI() {
             infoList.selectFirst("li.latest_eps").select("a").find { it.text() == "Full" }?.let { TvType.AnimeMovie }
         return if (tvType!=null) {// Movie
             val link = infoList.selectFirst("li.latest_eps").selectFirst("a").attr("href")
-            newMovieLoadResponse(title, url, TvType.Movie, link) {
+
+            val ep =link.substringAfterLast("a").substringBeforeLast("/") +" "+app.get(link).document.body().selectFirst("ul.list-episode > li > a").attr("data-hash")
+            newMovieLoadResponse(title, url, TvType.Movie, ep) {
                 this.posterUrl = poster
                 this.year = year
                 this.plot = description
@@ -87,7 +111,7 @@ class AnimeVietsub : MainAPI() {
             val directLink = wrapContent.selectFirst("a.watch_button_more").attr("href")
             val episodes = app.get(directLink).document.select("ul.list-episode > li").map {
                val a = it.selectFirst("a")
-                val href = a.attr("href")
+                val href = url.substringAfterLast("a").substringBeforeLast("/") +" "+a.attr("data-hash")
                 val episode = a.text().toIntOrNull()
                 val name = "Tập $episode"
                 Episode(
@@ -104,6 +128,34 @@ class AnimeVietsub : MainAPI() {
                 this.rating = rating
             }
         }
+    }
+
+    override suspend fun loadLinks(
+        data: String,
+        isCasting: Boolean,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ): Boolean {
+        val id = data.substringBefore(" ")
+        val dataHash = data.substringAfter(" ")
+        val json = app.post("$mainUrl/ajax/player", headers = mapOf("x-requested-with" to "XMLHttpRequest"),data = mapOf("id" to id, "link" to dataHash)).document.body().text()
+        val data = Gson().fromJson(json, Data::class.java)
+        val requestBody = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart("encodedString", data.link[0].file)
+            .build()
+       val link =  app.post("https://decode-api.vercel.app/animevietsub/get-link", headers = mapOf("content-type" to "multipart/form-data"), requestBody = requestBody).body.string().replace("\"", "")
+        callback.invoke(
+            ExtractorLink(
+            source = "HLS",
+            name = "HLS",
+            url = link, referer = "$mainUrl/",
+                quality = Qualities.P1080.value,
+                isM3u8 = true
+        )
+        )
+
+        return true
     }
 
     private fun Element.toSearchResult(): SearchResponse {
@@ -147,3 +199,13 @@ class AnimeVietsub : MainAPI() {
         }
     }
 }
+data class Data(
+    val _fxStatus: Int,
+    val success: Int,
+    val title:String,
+    val link: List<Link>
+
+)
+data class Link(
+    val file: String
+)

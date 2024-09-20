@@ -66,7 +66,7 @@ subprojects {
     dependencies {
         val apk by configurations
         val implementation by configurations
-//
+
 //        // Stubs for all Cloudstream classes
         apk("com.lagradost:cloudstream3:pre-release")
 

@@ -32,7 +32,7 @@ import java.net.URI
 import java.net.URLDecoder
 
 class HHPanda : MainAPI() {
-    override var mainUrl = "https://hhpanda.cx"
+    override var mainUrl = "https://hhpanda.vin"
     override var name = "HHPanda(Anime)"
     override val hasMainPage = true
     override var lang = "vi"
@@ -194,18 +194,13 @@ class HHPanda : MainAPI() {
         val document = res.document
         val data_href = document.selectFirst("div#ploption").selectFirst("a").attr("data-href")
         val referString = getSourceEmbed(data_href)
-
-        val link = "https://cloudasiatv.xyz" + app.get(
-            referString,
+        val link = "https://cloudasiatv.xyz" + app.get(url = referString,
             headers = mapOf("referer" to mainUrl + "/")
         ).document.body().toString().substringAfter("const options = {")
             .substringBefore("};").substringAfter(" file: \"").substringBefore("\"")
-            .substringAfter("const options = {").substringBefore("};")
-            .substringAfter(" file: \"").substringBefore("\"")
         listOf(
             Pair(link,"HLS")
         ).map { (link, source) ->
-            println(link)
             callback.invoke(
                 ExtractorLink(
                     source,
@@ -214,7 +209,6 @@ class HHPanda : MainAPI() {
                     referer = referString,
                     quality = Qualities.P1080.value,
                     isM3u8 = true,
-                    headers = mapOf("Referer" to referString),
                 )
             )
         }
