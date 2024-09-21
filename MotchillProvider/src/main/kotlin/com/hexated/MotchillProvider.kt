@@ -4,21 +4,18 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
-import okhttp3.Interceptor
-import okhttp3.Request
-import okhttp3.Response
 import org.jsoup.nodes.Element
-import java.net.Proxy
-
+import java.net.URLEncoder
+import io.github.cdimascio.dotenv.dotenv
 
 class MotchillProvider : MainAPI() {
-    override var mainUrl = "https://motchilltv.vc"
+    override var mainUrl = "https://motchilltv.my"
     override var name = "Motchill"
     override val hasMainPage = true
     override var lang = "vi"
     override val hasDownloadSupport = true
     override val hasQuickSearch = true
-    val serverFixUrl = "https://proxycros.onrender.com/index.m3u8?url="
+    val serverFixUrl = dotenv()["serverFixUrl"]
     override val supportedTypes = setOf(
         TvType.Movie,
         TvType.TvSeries,
@@ -72,33 +69,26 @@ class MotchillProvider : MainAPI() {
     }
 
     override suspend fun search(query: String): List<SearchResponse> {
-        val link = "$mainUrl/search?searchText=$query"
+        val link = "$mainUrl/search?searchText=${decode(query)}"
         val document = app.get(link).document
-
         return document.select("article.group").map {
             it.toSearchResult()
         }
     }
+    private fun decode(input: String): String = URLEncoder.encode(input, "utf-8")
     override suspend fun load(url: String): LoadResponse {
         val request = app.get(url)
         val document = request.document
-
         val title = document.selectFirst("h1")?.text()?.trim().toString()
-        val link = fixUrl(document.selectXpath("//*[@id=\"__nuxt\"]/div/div[1]/div/main/div[4]/div/section[1]/div[1]/div/div[1]/div[2]/div[3]/div[1]/a").attr("href"))
-        val poster = document.selectXpath("//*[@id=\"__nuxt\"]/div/div[1]/div/main/div[4]/div/section[1]/div[1]/div/div[1]/div[1]/div/img").attr("src")
-        val year = document.selectXpath("//*[@id=\"__nuxt\"]/div/div[1]/div/main/div[4]/div/section[1]/div[1]/div/div[1]/div[2]/div[1]/div/div[1]/span[1]").text().trim().toIntOrNull()
-        var description = document.selectXpath("//*[@id=\"__nuxt\"]/div/div[1]/div/main/div[4]/div/section[1]/div[1]/div/div[3]/div/div/div/div/div[2]/div/div").text().trim()
-        if (description.isEmpty()) {
-            description = document.selectXpath("//*[@id=\"__nuxt\"]/div/div[1]/div/main/div[4]/div/section[1]/div[1]/div/div[2]/div/div/div/div/div[2]/div/div").text().trim()
-        }
-        val rating = document.selectXpath("//*[@id=\"__nuxt\"]/div/div[1]/div/main/div[4]/div/section[1]/div[1]/div/div[1]/div[2]/div[2]/div/div/span[1]").text().toRatingInt()
-        val tvType = if (document.select("div.shadow a[href*='phim-bo'][title='Phim Bộ']").isNotEmpty()) {
-            TvType.TvSeries
-        } else {
-            TvType.Movie
-        }
+        val link = document.selectFirst("div.text-center.mt-1").selectFirst("a").attr("href")
+        val poster = document.select("div.py-2 > div.mx-auto.bg-zinc-900.flex > div.relative").select("img").attr("src")
+        val year = document.selectFirst("div.mt-2.text-sm.pt-4").selectFirst("span.text-zinc-400").text().toIntOrNull()
+        var description = document.selectFirst("div.px-4.py-4.flex-auto > div.tab-content.tab-space").selectFirst("div.divide-y").selectFirst("div.pt-3").text()
+
+        val rating = document.selectFirst("div.flex.mb-4.pt-4 > div > div").selectFirst("span").text().toRatingInt()
+        val tvType = TvType.TvSeries
         return if (tvType == TvType.TvSeries) {
-            val documentEpisode = app.get(link).document
+            val documentEpisode = app.get(mainUrl+link).document
             val episodes = documentEpisode.select("a[href^='/xem-phim-']").map {
                 val href = fixUrl(it.attr("href"))
                 val episode = it.text().replace(Regex("[^0-9]"), "").trim().toIntOrNull()
@@ -154,7 +144,12 @@ class MotchillProvider : MainAPI() {
                     val isFrame = jsonObject.IsFrame
                     val name = jsonObject.ServerName
                     if ((!url.contains("https://player.cloudbeta.win"))&&(url.endsWith(".m3u8"))){
-                        listOfLinks.add(Pair(serverFixUrl+url, "Server ${i + 1}"))
+                        if (url.contains("https://fetch.cloudz.win/tt/play/")){
+                            listOfLinks.add(Pair(serverFixUrl+url, "Server ${i + 1}"))
+                        }else{
+                            listOfLinks.add(Pair(url, "Server ${i + 1}"))
+                        }
+
                     }
                 }
             }
@@ -166,7 +161,7 @@ class MotchillProvider : MainAPI() {
                         source,
                         source,
                         link,
-                        referer = "$mainUrl/",
+                        referer = "",
                         quality = Qualities.Unknown.value,
                         ExtractorLinkType.M3U8
                     )

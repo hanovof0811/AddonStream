@@ -91,6 +91,7 @@ subprojects {
         // these dependencies can include any of those which are added by the app,
         // but you dont need to include any of them if you dont need them
         // https://github.com/recloudstream/cloudstream/blob/master/app/build.gradle
+        implementation("io.github.cdimascio:dotenv-kotlin:6.4.2")
         implementation(kotlin("stdlib")) // adds standard kotlin features
         implementation("com.github.Blatzar:NiceHttp:0.4.11") // http library
         implementation("org.jsoup:jsoup:1.16.2") // html parser
