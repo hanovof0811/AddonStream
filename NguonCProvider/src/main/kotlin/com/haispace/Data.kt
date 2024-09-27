@@ -41,7 +41,8 @@ data class ItemMovie(
     val poster_url : String,
     val thumb_url : String,
     val total_episodes: Int,
-   val current_episode: String
+    val current_episode: String,
+    val language: String//"Vietsub + Thuyết Minh"
 )
 data class Episodes(
     val server_name : String,
