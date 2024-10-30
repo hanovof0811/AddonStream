@@ -17,6 +17,7 @@ import com.lagradost.cloudstream3.SeasonData
 import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.TvType
 import com.lagradost.cloudstream3.addDub
+import com.lagradost.cloudstream3.addDubStatus
 import com.lagradost.cloudstream3.addEpisodes
 import com.lagradost.cloudstream3.addQuality
 import com.lagradost.cloudstream3.addSub
@@ -33,6 +34,7 @@ import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.ExtractorLinkType
 import com.lagradost.cloudstream3.utils.INFER_TYPE
 import com.lagradost.cloudstream3.utils.Qualities
+import com.m3upaser.Parser
 import okhttp3.Interceptor
 import okhttp3.Request
 import okhttp3.Response
@@ -69,8 +71,10 @@ class NguonC : MainAPI() {
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
+
         val resp = app.get(request.data + page)
         val document = resp.document
+//        Parser().parse(resp.body.byteStream())
         val home = toMainPage(document.body().text())
         return newHomePageResponse(
             list = HomePageList(
@@ -190,8 +194,7 @@ class NguonC : MainAPI() {
                       this.posterUrl = posterUrl
                       when (statusSub) {
                           0 -> {
-                              addDub(episode)
-                              addSub(episode)
+                              addDubStatus(dubExist = true, subExist = true, dubEpisodes = episode, subEpisodes = episode)
                           }
                           1 -> {
                               addSub(episode)

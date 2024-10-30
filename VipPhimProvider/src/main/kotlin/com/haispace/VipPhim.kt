@@ -57,7 +57,7 @@ class Anime47 : MainAPI() {
         request: MainPageRequest
     ): HomePageResponse {
         val home =Gson().fromJson(app.get(request.data +page).document.body().text(),FilmDetail::class.java).data.data.map {
-            it.toSearchResult()
+            it.toSearchResult(null)
         }
         return newHomePageResponse(
             list = HomePageList(
@@ -71,11 +71,10 @@ class Anime47 : MainAPI() {
 
     private fun decode(input: String): String? = URLDecoder.decode(input, "utf-8")
 
-    private fun Film.toSearchResult(): SearchResponse {
+    private fun Film.toSearchResult(isSearch : Boolean?): SearchResponse {
 
-        val href = "$baseAPI/api/films/film-by-slug/${this.slugUrl}"
-
-        val poster = if(!this.poster.contains("https://")) "$baseVideo${this.poster.replace("//", "/")}" else this.poster
+        val href = "$baseAPI/api/films/film-by-slug/${this.slugUrl} ${if (isSearch==true) "true" else "false"}"
+        val poster = if(!this.poster.contains("https://")) "${if (isSearch == true) baseAPI else baseVideo}${if (this.poster.contains("//")) this.poster.replace("//", "/") else this.poster}" else this.poster
         val title = this.title
         val nameEnglish = this.title_eng
         val type = if (this.type.contains("series")) TvType.TvSeries else TvType.Movie
@@ -96,17 +95,20 @@ class Anime47 : MainAPI() {
 
     override suspend fun search(query: String): List<SearchResponse> {
         val newQuery = decode(query)
-        val url = "$mainUrl/api/films/search-film?pageSize=25&pageIndex=0&searchKeyword=$newQuery"
+        val url = "$baseAPI/api/films/search-film?pageSize=25&pageIndex=0&searchKeyword=$newQuery"
         return Gson().fromJson(app.get(url).document.body().text(),FilmDetail::class.java).data.data.map {
-            it.toSearchResult()
+            it.toSearchResult(true)
         }
     }
 
     override suspend fun load(url: String): LoadResponse {
+        val datas = url.split(" ")
+        val urlFix = datas[0]
+        val isSearch = datas[1].toBoolean()
         val video =
-            Gson().fromJson(app.get(url).document.body().text(), FilmDetail::class.java).data.video
+            Gson().fromJson(app.get(urlFix).document.body().text(), FilmDetail::class.java).data.video
 
-        val poster = if (!video.thumbnail.contains("https://"))"$baseVideo${video.thumbnail.replace("//", "/")}" else video.thumbnail
+        val poster = if (!video.thumbnail.contains("https://")) "${if (isSearch) baseAPI+"/" else baseVideo}${video.thumbnail.replace("//", "/")}" else video.thumbnail
 
         val title = video.title
 
@@ -121,7 +123,7 @@ class Anime47 : MainAPI() {
         val description = video.description
         return if (tvType == TvType.TvSeries) {
             val episodes = video.parent[0].seasons.map {
-                val href =  "$baseAPI/api/films/film-by-slug/${it.slugUrl}"
+                val href =  "$baseAPI/api/films/film-by-slug/${it.slugUrl} ${isSearch.toString()}"
                 val episode = it.epsiode
                 val name = "Tập $episode"
                 Episode(
@@ -157,10 +159,12 @@ class Anime47 : MainAPI() {
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
+        val datas = data.split(" ")
+        val urlFix = datas[0]
+        val isSearch = datas[1].toBoolean()
         val video =
-            Gson().fromJson(app.get(data).document.body().text(), FilmDetail::class.java).data.video
-
-        val videoUrl  = if(video.hlsPath.isNullOrEmpty()) "$baseVideo${video.video_location}" else "$baseVideo${video.hlsPath}"
+            Gson().fromJson(app.get(urlFix).document.body().text(), FilmDetail::class.java).data.video
+        val videoUrl  = if(video.hlsPath.isNullOrEmpty()) "${if (isSearch) baseAPI else baseVideo}${video.video_location}" else "${if (isSearch) baseAPI else baseVideo}${video.hlsPath}"
         Gson().fromJson(app.get("$baseAPI/api/subtitle/${video._id}/?pageSize=5&pageIndex=0&languageSub=vietnamese").document.body().text(),FilmDetail::class.java).data.data.map {
             val link = baseAPI+it.file_sub
             subtitleCallback.invoke(SubtitleFile("vietnam",link))
@@ -189,7 +193,7 @@ class Anime47 : MainAPI() {
     }
     private suspend fun suggest(id : String) : List<SearchResponse>{
       return Gson().fromJson(app.get("$baseAPI/api/films/relation?category_id=$id").document.body().text(),FilmDetail::class.java).data.data.map {
-           it.toSearchResult()
+           it.toSearchResult(null)
        }
 
     }

@@ -32,7 +32,7 @@ import java.net.URI
 import java.net.URLDecoder
 
 class HHPanda : MainAPI() {
-    override var mainUrl = "https://hhpanda.vin"
+    override var mainUrl = "https://hhpanda.city"
     override var name = "HHPanda(Anime)"
     override val hasMainPage = true
     override var lang = "vi"

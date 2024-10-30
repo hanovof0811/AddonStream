@@ -142,7 +142,8 @@ class AnimeVietsub : MainAPI() {
         val data = Gson().fromJson(json, Data::class.java)
         val requestBody = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
-            .addFormDataPart("encodedString", data.link[0].file)
+            .addFormDataPart("text", data.link[0].file)
+            .addFormDataPart("url", dataHash)
             .build()
        val link =  app.post("https://decode-api.vercel.app/animevietsub/get-link", headers = mapOf("content-type" to "multipart/form-data"), requestBody = requestBody).body.string().replace("\"", "")
         callback.invoke(
